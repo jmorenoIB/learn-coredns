@@ -1,0 +1,67 @@
+# https://taskfile.dev
+
+version: '3'
+
+dotenv: ['.env']
+
+tasks:
+  default:
+    cmds:
+      - task: dns
+    silent: true
+
+  set:
+    desc: Set DNS server for the Wi-Fi interface
+    cmds:
+      - task: loop
+      - networksetup -setdnsservers Wi-Fi $BIND_ADDRESS
+
+  unset:
+    desc: Unset DNS server for the Wi-Fi interface
+    cmds:
+      - task: noloop
+      - networksetup -setdnsservers Wi-Fi $DEFAULT_DNS_LIST
+
+  loop:
+    desc: Creates an alias for the loopback interface
+    cmds:
+      - sudo ifconfig lo0 alias $BIND_ADDRESS
+    status:
+      - test $(sudo ifconfig lo0 | grep "net $BIND_ADDRESS" | wc -l) -gt 0
+
+  noloop:
+    desc: Removes the alias for the loopback interface
+    cmds:
+      - sudo ifconfig lo0 -alias $BIND_ADDRESS
+    status:
+      - test $(sudo ifconfig lo0 | grep "net $BIND_ADDRESS" | wc -l) -eq 0
+
+  dns:
+    desc: Start CoreDNS in current directory
+    deps: [check-binary]
+    cmds:
+      - defer: { task: unset }
+      - task: set
+      - task: run-coredns
+        vars: {COREFILE: Corefile, DNS_PORT: 53}
+
+  flush:
+    desc: Flush the DNS cache
+    cmds:
+      - sudo dscacheutil -flushcache
+      - sudo killall -HUP mDNSResponder
+
+  check-binary:
+    desc: Checks if the coredns binary exists in the root of the repository
+    cmds:
+      - echo "Please copy the coredns binary to the root of this repository"
+      - test 1 -eq 0
+    status:
+      - test -f coredns && test -x coredns
+
+  run-coredns:
+    cmds:
+      - >
+        sudo BIND_ADDRESS="${BIND_ADDRESS}" FORWARD_PORT="${FORWARD_PORT}"
+        ./coredns -conf ./{{.COREFILE}} -logtostderr -dns.port {{.DNS_PORT}}
+    silent: true

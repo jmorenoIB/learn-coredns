@@ -1,0 +1,12 @@
+$ORIGIN im.the.walrus.
+$TTL 1h
+
+@               IN  SOA     ns.im.the.walrus. admin.im.the.walrus. (
+                    2022061010     ; Serial
+                    1d             ; Refresh
+                    2h             ; Retry
+                    4w             ; Expire
+                    1h)            ; Minimum TTL
+@               IN  A       127.0.0.2
+@               IN  NS      ns.im.the.walrus.
+ns              IN  CNAME   @

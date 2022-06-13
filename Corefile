@@ -1,0 +1,13 @@
+. {
+    bind {$BIND_ADDRESS}
+    forward . 8.8.8.8 9.9.9.9
+    log
+    errors
+}
+
+im.the.walrus {
+    bind {$BIND_ADDRESS}
+    file im.the.walrus
+    log
+    errors
+}
