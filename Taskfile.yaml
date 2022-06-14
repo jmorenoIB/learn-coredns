@@ -45,6 +45,24 @@ tasks:
       - task: run-coredns
         vars: {COREFILE: Corefile, DNS_PORT: 53}
 
+  first:
+    desc: Launch the first CoreDNS instance ---i.e., the forwarder
+    deps: [check-binary]
+    cmds:
+      - defer: { task: unset }
+      - task: set
+      - task: run-coredns
+        vars: {COREFILE: Corefile.first, DNS_PORT: 53}
+
+  second:
+    desc: Launch the second CoreDNS instance ---i.e., the DNS handler
+    deps: [check-binary]
+    cmds:
+      - defer: { task: unset }
+      - task: set
+      - task: run-coredns
+        vars: {COREFILE: Corefile.second, DNS_PORT: "{{.FORWARD_PORT}}"}
+
   flush:
     desc: Flush the DNS cache
     cmds:
