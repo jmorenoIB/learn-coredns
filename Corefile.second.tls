@@ -1,0 +1,18 @@
+tls://.:853 {
+    bind {$BIND_ADDRESS}
+    tls certs/server.crt certs/server.key certs/rootCA.crt
+    forward . tls://9.9.9.9 tls://149.112.112.112 {
+        tls_servername dns.quad9.net
+        health_check 10s
+    }
+    log
+    errors
+}
+
+tls://im.the.walrus:853 {
+    bind {$BIND_ADDRESS}
+    tls certs/server.crt certs/server.key certs/rootCA.crt
+    file im.the.walrus
+    log
+    errors
+}

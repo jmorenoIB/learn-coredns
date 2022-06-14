@@ -1,0 +1,8 @@
+. {
+    bind {$BIND_ADDRESS}
+    forward . tls://{$BIND_ADDRESS} {
+        tls certs/server.crt certs/server.key certs/rootCA.crt
+    }
+    log
+    errors
+}

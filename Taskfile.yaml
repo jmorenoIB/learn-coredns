@@ -63,6 +63,24 @@ tasks:
       - task: run-coredns
         vars: {COREFILE: Corefile.second, DNS_PORT: "{{.FORWARD_PORT}}"}
 
+  first-tls:
+    desc: Launch the first CoreDNS instance, TLS version
+    deps: [check-binary]
+    cmds:
+      - defer: { task: unset }
+      - task: set
+      - task: run-coredns
+        vars: {COREFILE: Corefile.first.tls, DNS_PORT: 53}
+
+  second-tls:
+    desc: Launch the second CoreDNS instance, TLS version
+    deps: [check-binary,make-certs]
+    cmds:
+      - defer: { task: unset }
+      - task: set
+      - task: run-coredns
+        vars: {COREFILE: Corefile.second.tls, DNS_PORT: "{{.FORWARD_PORT}}"}
+
   flush:
     desc: Flush the DNS cache
     cmds:
@@ -83,3 +101,28 @@ tasks:
         sudo BIND_ADDRESS="${BIND_ADDRESS}" FORWARD_PORT="${FORWARD_PORT}"
         ./coredns -conf ./{{.COREFILE}} -logtostderr -dns.port {{.DNS_PORT}}
     silent: true
+
+  make-certs:
+    cmds:
+      - openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -sha256 -days 365 -nodes -subj '/CN=localhost'
+      - >
+        openssl req -x509
+        -sha256 -days 356
+        -nodes
+        -newkey rsa:2048
+        -subj "/CN=localhost/C=US/L=San Fransisco"
+        -keyout certs/rootCA.key -out certs/rootCA.crt
+      - openssl genrsa -out certs/server.key 2048
+      - openssl req -new -key certs/server.key -out certs/server.csr -config certs/csr.conf
+      - >
+        openssl x509 -req
+        -in certs/server.csr
+        -CA certs/rootCA.crt -CAkey certs/rootCA.key
+        -CAcreateserial -out certs/server.crt
+        -days 365
+        -sha256 -extfile certs/cert.conf
+      - mv *.pem certs/ > /dev/null 2>&1 || exit 0
+    status:
+      - test -f ./certs/server.crt
+      - test -f ./certs/server.key
+      - test -f ./certs/rootCA.crt
